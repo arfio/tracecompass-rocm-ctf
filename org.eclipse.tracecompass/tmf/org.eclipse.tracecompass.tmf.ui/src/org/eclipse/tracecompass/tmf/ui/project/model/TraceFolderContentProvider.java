@@ -1,0 +1,59 @@
+/*******************************************************************************
+ * Copyright (c) 2010, 2014 Ericsson
+ *
+ * All rights reserved. This program and the accompanying materials are
+ * made available under the terms of the Eclipse Public License 2.0 which
+ * accompanies this distribution, and is available at
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *   Francois Chouinard - Initial API and implementation
+ *   Patrick Tasse - Add support for folder elements
+ *******************************************************************************/
+
+package org.eclipse.tracecompass.tmf.ui.project.model;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.eclipse.jface.viewers.IStructuredContentProvider;
+import org.eclipse.jface.viewers.Viewer;
+
+/**
+ * Content provider implementation for trace folders for tree viewers that display
+ * the content of a trace folder.
+ * <p>
+ *
+ * @version 1.0
+ * @author Francois Chouinard
+ */
+public class TraceFolderContentProvider implements IStructuredContentProvider {
+
+    @Override
+    public Object[] getElements(Object inputElement) {
+        if (inputElement instanceof TmfTraceFolder) {
+            TmfTraceFolder folder = (TmfTraceFolder) inputElement;
+            List<ITmfProjectModelElement> elements = new ArrayList<>();
+            for (TmfTraceElement trace : folder.getTraces()) {
+                if (trace.getTraceType() != null) {
+                    elements.add(trace);
+                }
+            }
+            return elements.toArray();
+        }
+        return null;
+    }
+
+    @Override
+    public void dispose() {
+        // Do nothing
+    }
+
+    @Override
+    public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
+        // Do nothing
+    }
+
+}

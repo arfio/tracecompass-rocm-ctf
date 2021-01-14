@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.eclipse.ui.perspectives">
+      <perspective
+            class="org.eclipse.tracecompass.tmf.ui.swtbot.tests.shared.TestingPerspectiveFactory"
+            id="org.eclipse.tracecompass.tmf.ui.swtbot.tests.perspective"
+            name="Testing">
+      </perspective>
+      <perspective
+            class="org.eclipse.tracecompass.tmf.ui.swtbot.tests.viewers.events.TmfAlignTimeAxisTest$AlignPerspectiveFactory2"
+            id="org.eclipse.linuxtools.tmf.test.align.2"
+            name="Align2">
+      </perspective>
+      <perspective
+            class="org.eclipse.tracecompass.tmf.ui.swtbot.tests.viewers.events.TmfAlignTimeAxisTest$AlignPerspectiveFactory3"
+            id="org.eclipse.linuxtools.tmf.test.align.3"
+            name="Align3">
+      </perspective>
+      <perspective
+            class="org.eclipse.tracecompass.tmf.ui.swtbot.tests.viewers.events.TmfAlignTimeAxisTest$AlignPerspectiveFactory1"
+            id="org.eclipse.linuxtools.tmf.test.align.1"
+            name="Align1">
+      </perspective>
+   </extension>
+   <extension
+         point="org.eclipse.ui.views">
+      <view
+            category="org.eclipse.linuxtools.tmf.ui.stubs"
+            class="org.eclipse.tracecompass.tmf.ui.swtbot.tests.views.TimeGraphViewStub"
+            id="org.eclipse.tracecompass.tmf.ui.swtbot.tests.views.timegraph.stub"
+            name="Time Graph Stub"
+            restorable="true">
+      </view>
+      <view
+            class="org.eclipse.tracecompass.tmf.ui.swtbot.tests.views.XYChartViewStub"
+            id="org.eclipse.tracecompass.tmf.ui.swtbot.tests.views.xychart.stub"
+            name="XY Chart View Stub"
+            restorable="true">
+      </view>
+      <view
+            class="org.eclipse.tracecompass.tmf.ui.swtbot.tests.views.xychart.XYChartViewStub"
+            id="org.eclipse.tracecompass.tmf.ui.swtbot.tests.views.xychart.xystub"
+            name="XY Chart View Stub New"
+            restorable="true">
+      </view>
+   </extension>
+
+</plugin>

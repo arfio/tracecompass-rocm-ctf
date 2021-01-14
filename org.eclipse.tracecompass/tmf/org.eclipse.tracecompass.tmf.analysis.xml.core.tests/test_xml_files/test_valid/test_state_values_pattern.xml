@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ***************************************************************************
+* Copyright (c) 2016 École Polytechnique de Montréal
+*
+* All rights reserved. This program and the accompanying materials are
+* made available under the terms of the Eclipse Public License 2.0 which
+* accompanies this distribution, and is available at
+* https://www.eclipse.org/legal/epl-2.0/
+*
+* SPDX-License-Identifier: EPL-2.0
+*************************************************************************** -->
+<tmfxml xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:noNamespaceSchemaLocation="xmlDefinition.xsd">
+
+	<!-- This file will test state values in the context of an fsm -->
+
+<pattern version="0" id="org.eclipse.tracecompass.xml.tests.statevaluescenarios">
+
+	<patternHandler initial="test">
+
+	   <test id="cpu">
+			<if>
+				<condition>
+					<stateValue type="query">
+						<stateAttribute type="constant" value="#CurrentScenario" />
+						<stateAttribute type="constant" value="cpu" />
+					</stateValue>
+					<stateValue type="eventField" value="cpu" />
+				</condition>
+			</if>
+		</test>
+
+		<!-- ACTIONS -->
+		<!-- Save a value in an attribute pool -->
+		<action id="save_pool">
+			<stateChange>
+				<stateAttribute type="constant" value="Operations" />
+				<stateAttribute type="pool" />
+				<stateValue type="eventField" value="op" />
+			</stateChange>
+			<stateChange>
+				<stateAttribute type="constant" value="#CurrentScenario" />
+				<stateAttribute type="constant" value="cpu" />
+				<stateValue type="eventField" value="cpu" />
+			</stateChange>
+		</action>
+
+		<!-- A different action, to test that the attribute pool is shared in a same analysis -->
+		<action id="save_pool2">
+			<stateChange>
+				<stateAttribute type="constant" value="Operations" />
+				<stateAttribute type="pool" />
+				<stateValue type="eventField" value="op" />
+			</stateChange>
+		</action>
+
+		<!-- FSMs -->
+
+		<!-- test fsm
+			Declare a test FSM that that will generate two segments for each event received
+		-->
+		<fsm id="test" initial="wait_entry">
+			<state id="wait_entry">
+				<transition event="entry" target="in_scenario" action="save_pool" />
+			</state>
+			<state id="in_scenario">
+				<transition cond="cpu" event="exit" target="end" />
+				<transition cond="cpu" event="action" target="in_scenario" action="save_pool2" />
+			</state>
+			<final id="end"/>
+		</fsm>
+	</patternHandler>
+</pattern>
+</tmfxml>

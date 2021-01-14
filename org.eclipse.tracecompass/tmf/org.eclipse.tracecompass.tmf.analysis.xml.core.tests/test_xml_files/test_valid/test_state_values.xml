@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ***************************************************************************
+* Copyright (c) 2016 École Polytechnique de Montréal
+*
+* All rights reserved. This program and the accompanying materials are
+* made available under the terms of the Eclipse Public License 2.0 which
+* accompanies this distribution, and is available at
+* https://www.eclipse.org/legal/epl-2.0/
+*
+* SPDX-License-Identifier: EPL-2.0
+*
+* Contributors:
+	* Geneviève Bastien - Initial API and implementation
+*************************************************************************** -->
+<tmfxml xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:noNamespaceSchemaLocation="xmlDefinition.xsd">
+
+    <timeGraphView id="org.eclipse.linuxtools.tmf.analysis.xml.ui.views.statesystem">
+        <head>
+            <analysis id="test.xml.attributes" />
+            <label value="Test XML Attributes view" />
+        </head>
+        <!-- Test string value for colors for this analysis -->
+        <definedValue name="Good" value="GOOD" color="#118811" />
+        <definedValue name="Bad" value="BAD" color="#DDDD00" />
+
+        <entry path="update/*">
+            <display type="self" />
+        </entry>
+    </timeGraphView>
+
+	<stateProvider id="test.xml.attributes" version="1">
+		<head>
+			<traceType id="org.eclipse.linuxtools.tmf.core.tests.xmlstub" />
+			<label value="Xml State Values test" />
+		</head>
+		<mappingGroup id="operation">
+			<entry>
+				<stateValue type="string" value="read only" />
+				<stateValue type="string" value="op1" />
+			</entry>
+		</mappingGroup>
+		<!-- Test to see that state values are updated or modified depending on the requested state change -->
+		<eventHandler eventName="entry">
+			<stateChange>
+				<stateAttribute type="constant" value="update" />
+				<stateAttribute type="eventField" value="cpu" />
+				<stateValue type="string" value="UNKNOWN" />
+			</stateChange>
+			<stateChange>
+				<stateAttribute type="constant" value="modify" />
+				<stateAttribute type="eventField" value="cpu" />
+				<stateValue type="string" value="UNKNOWN" />
+			</stateChange>
+			<stateChange>
+				<stateAttribute type="constant" value="hostID" />
+				<stateValue type="eventField" value="hostID" />
+			</stateChange>
+			<stateChange>
+				<stateAttribute type="constant" value="stack"/>
+				<stateValue stack="push" type="eventField" value="timestamp" />
+			</stateChange>
+			<stateChange>
+				<if>
+					<condition>
+						<field name="op"/>
+						<stateValue mappingGroup="operation" type="string" value="read only"/>
+					</condition>
+				</if>
+				<then>
+					<stateAttribute type="constant" value="mapped" />
+					<stateValue type="string" value="TRUE" />
+				</then>
+				<else>
+					<stateAttribute type="constant" value="mapped" />
+					<stateValue type="string" value="FALSE" />
+				</else>
+			</stateChange>
+			<stateChange>
+				<stateAttribute type="constant" value="script" />
+				<stateValue type="script" value="op == 'op1' ? 'TRUE' : 'FALSE'" scriptEngine="nashorn">
+					<stateValue id="op" type="eventField" value="op" />
+				</stateValue>
+			</stateChange>
+			<stateChange>
+				<stateAttribute type="constant" value="future" />
+				<stateValue type="int" value="100" />
+			</stateChange>
+			<stateChange>
+				<stateAttribute type="constant" value="future" />
+				<stateValue type="int" value="101" />
+				<futureTime type="script" value="ts + 2" scriptEngine="nashorn">
+					<stateValue id="ts" type="eventField" value="timestamp" />
+				</futureTime>
+			</stateChange>
+			<stateChange>
+				<stateAttribute type="constant" value="futureStr" />
+				<stateValue type="int" value="100" />
+			</stateChange>
+			<stateChange>
+				<stateAttribute type="constant" value="futureStr" />
+				<stateValue type="int" value="101" />
+				<futureTime type="script" value="ts + 2" scriptEngine="nashorn" forcedType="string" >
+					<stateValue id="ts" type="eventField" value="timestamp" />
+				</futureTime>
+			</stateChange>
+			<stateChange>
+				<stateAttribute type="constant" value="futureStack" />
+				<stateAttribute type="eventField" value="cpu" />
+				<stateValue type="eventField" value="op" stack="push" />
+				<futureTime type="script" value="ts + 1" scriptEngine="nashorn" >
+					<stateValue id="ts" type="eventField" value="timestamp" />
+				</futureTime>
+			</stateChange>
+			<stateChange>
+				<stateAttribute type="constant" value="futureStack" />
+				<stateAttribute type="eventField" value="cpu" />
+				<stateValue type="eventField" value="op" stack="pop" />
+				<futureTime type="script" value="ts + 6" scriptEngine="nashorn" >
+					<stateValue id="ts" type="eventField" value="timestamp" />
+				</futureTime>
+			</stateChange>
+		</eventHandler>
+		<eventHandler eventName="exit">
+			<stateChange>
+				<stateAttribute type="constant" value="update" />
+				<stateAttribute type="eventField" value="cpu" />
+				<stateValue type="eventField" value="curState" update="true" />
+			</stateChange>
+			<stateChange>
+				<stateAttribute type="constant" value="update" />
+				<stateAttribute type="eventField" value="cpu" />
+				<stateValue type="null" />
+			</stateChange>
+			<stateChange>
+				<stateAttribute type="constant" value="modify" />
+				<stateAttribute type="eventField" value="cpu" />
+				<stateValue type="eventField" value="curState" />
+			</stateChange>
+			<stateChange>
+				<if>
+					<condition>
+						<stateValue type="long" stack="peek" >
+							<stateAttribute type="constant" value="stack" />
+						</stateValue>
+						<stateValue type="long" value="5" />
+					</condition>
+				</if>
+				<then>
+					<stateAttribute type="constant" value="stack"/>
+					<stateValue stack="pop" type="null"/>
+				</then>
+			</stateChange>
+			<stateChange>
+				<if>
+					<condition>
+						<field name="op"/>
+						<stateValue type="string" value="read only"/>
+					</condition>
+				</if>
+				<then>
+					<stateAttribute type="constant" value="mapped" />
+					<stateValue type="string" value="TRUE" />
+				</then>
+				<else>
+					<stateAttribute type="constant" value="mapped" />
+					<stateValue type="string" value="FALSE" />
+				</else>
+			</stateChange>
+			<stateChange>
+				<stateAttribute type="constant" value="script" />
+				<stateValue type="script" value="op == 'op1' ? 'FALSE' : 'TRUE'" scriptEngine="nashorn" >
+					<stateValue id="op" type="eventField" value="op" />
+				</stateValue>
+			</stateChange>
+		</eventHandler>
+	</stateProvider>
+</tmfxml>

@@ -1,0 +1,24 @@
+<!-- ***************************************************************************
+* Copyright (c) 2014 Ericsson
+*
+* All rights reserved. This program and the accompanying materials are
+* made available under the terms of the Eclipse Public License 2.0 which
+* accompanies this distribution, and is available at
+* https://www.eclipse.org/legal/epl-2.0/
+*
+* SPDX-License-Identifier: EPL-2.0
+*************************************************************************** -->
+<trace>
+<event timestamp="1" name="entry">
+<field name="cpu" type="int" value="0" />
+</event>
+<event timestamp="3" name="entry">
+<field name="cpu" type="int" value="0" />
+</event>
+<event timestamp="5" name="entry">
+<field name="cpu" type="int" value="0" />
+</event>
+<event timestamp="7" name="exit">
+<field name="cpu" type="int" value="0" />
+</event>
+</trace>

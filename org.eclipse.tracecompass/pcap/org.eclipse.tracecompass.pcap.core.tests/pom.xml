@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+   Copyright (c) 2014, 2019 Ericsson
+
+   All rights reserved. This program and the accompanying materials
+   are made available under the terms of the Eclipse Public License 2.0
+   which accompanies this distribution, and is available at
+   https://www.eclipse.org/legal/epl-2.0/
+
+   SPDX-License-Identifier: EPL-2.0
+-->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <artifactId>org.eclipse.tracecompass.pcap-parent</artifactId>
+    <groupId>org.eclipse.tracecompass</groupId>
+    <version>6.1.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>org.eclipse.tracecompass.pcap.core.tests</artifactId>
+  <version>1.0.5-SNAPSHOT</version>
+  <packaging>eclipse-test-plugin</packaging>
+
+  <name>Trace Compass Pcap Parser Core Tests Plug-in</name>
+
+  <properties>
+    <skipTests>${skip-tc-core-tests}</skipTests>
+  </properties>
+
+  <!-- Do not download the test traces if "maven.test.skip" is set -->
+  <profiles>
+    <profile>
+      <id>download-traces</id>
+      <activation>
+        <property>
+          <name>!skipTests</name>
+        </property>
+      </activation>
+
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>prepare</id>
+                <phase>pre-integration-test</phase>
+                <configuration>
+                  <target>
+                    <ant antfile="get-traces.xml" dir="rsc" />
+                  </target>
+                </configuration>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
+</project>

@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+   Copyright (c) 2014, 2020 Ericsson
+
+   All rights reserved. This program and the accompanying materials
+   are made available under the terms of the Eclipse Public License 2.0
+   which accompanies this distribution, and is available at
+   https://www.eclipse.org/legal/epl-2.0/
+
+   SPDX-License-Identifier: EPL-2.0
+
+   Contributors:
+       Ericsson - initial implementation
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+    <parent>
+      <artifactId>org.eclipse.tracecompass.releng-parent</artifactId>
+      <groupId>org.eclipse.tracecompass</groupId>
+      <version>6.1.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>org.eclipse.tracecompass.target</artifactId>
+    <name>Trace Compass Target Platform</name>
+    <packaging>pom</packaging>
+
+    <build>
+      <plugins>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>build-helper-maven-plugin</artifactId>
+          <version>3.0.0</version>
+          <executions>
+            <execution>
+              <id>attach-artifacts</id>
+              <phase>package</phase>
+              <goals>
+                <goal>attach-artifact</goal>
+              </goals>
+              <configuration>
+                <artifacts>
+                  <artifact>
+                    <file>tracecompass-e4.8.target</file>
+                    <type>target</type>
+                    <classifier>tracecompass-e4.8</classifier>
+                  </artifact>
+                  <artifact>
+                    <file>tracecompass-e4.9.target</file>
+                    <type>target</type>
+                    <classifier>tracecompass-e4.9</classifier>
+                  </artifact>
+                  <artifact>
+                    <file>tracecompass-e4.10.target</file>
+                    <type>target</type>
+                    <classifier>tracecompass-e4.10</classifier>
+                  </artifact>
+                  <artifact>
+                    <file>tracecompass-e4.11.target</file>
+                    <type>target</type>
+                    <classifier>tracecompass-e4.11</classifier>
+                  </artifact>
+                  <artifact>
+                    <file>tracecompass-e4.12.target</file>
+                    <type>target</type>
+                    <classifier>tracecompass-e4.12</classifier>
+                  </artifact>
+                  <artifact>
+                    <file>tracecompass-e4.13.target</file>
+                    <type>target</type>
+                    <classifier>tracecompass-e4.13</classifier>
+                  </artifact>
+                  <artifact>
+                    <file>tracecompass-e4.14.target</file>
+                    <type>target</type>
+                    <classifier>tracecompass-e4.14</classifier>
+                  </artifact>
+                  <artifact>
+                    <file>tracecompass-e4.15.target</file>
+                    <type>target</type>
+                    <classifier>tracecompass-e4.15</classifier>
+                  </artifact>
+                  <artifact>
+                    <file>tracecompass-e4.16.target</file>
+                    <type>target</type>
+                    <classifier>tracecompass-e4.16</classifier>
+                  </artifact>
+                  <artifact>
+                    <file>tracecompass-e4.17.target</file>
+                    <type>target</type>
+                    <classifier>tracecompass-e4.17</classifier>
+                  </artifact>
+                  <artifact>
+                    <file>tracecompass-eStaging.target</file>
+                    <type>target</type>
+                    <classifier>tracecompass-eStaging</classifier>
+                  </artifact>
+                  <!-- More targets could be added here -->
+                </artifacts>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+      </plugins>
+    </build>
+</project>

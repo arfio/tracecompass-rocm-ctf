@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.eclipse.linuxtools.tmf.analysis.xml.core.files">
+      <xmlfile
+            file="test_xml_files/test_builtin.xml">
+      </xmlfile>
+   </extension>
+   <extension
+         point="org.eclipse.tracecompass.tmf.analysis.xml.core.xsd">
+      <xsdfile
+            file="test_xml_files/extension.xsd">
+      </xsdfile>
+      <schemaParser
+            class="org.eclipse.tracecompass.tmf.analysis.xml.core.tests.stubs.XmlSchemaParserStub">
+      </schemaParser>
+   </extension>
+
+</plugin>
