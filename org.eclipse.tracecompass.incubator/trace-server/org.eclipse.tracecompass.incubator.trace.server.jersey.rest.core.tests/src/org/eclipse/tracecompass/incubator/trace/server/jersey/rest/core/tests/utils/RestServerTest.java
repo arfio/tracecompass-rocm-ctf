@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018 Ericsson
+ * Copyright (c) 2018, 2020 Ericsson
  *
  * All rights reserved. This program and the accompanying materials are
  * made available under the terms of the Eclipse Public License 2.0 which
@@ -14,12 +14,12 @@ package org.eclipse.tracecompass.incubator.trace.server.jersey.rest.core.tests.u
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -31,6 +31,7 @@ import javax.ws.rs.core.Response;
 
 import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.tracecompass.incubator.internal.trace.server.jersey.rest.core.model.views.QueryParameters;
+import org.eclipse.tracecompass.incubator.internal.trace.server.jersey.rest.core.webapp.TraceServerConfiguration;
 import org.eclipse.tracecompass.incubator.internal.trace.server.jersey.rest.core.webapp.WebApplication;
 import org.eclipse.tracecompass.incubator.trace.server.jersey.rest.core.tests.stubs.DataProviderDescriptorStub;
 import org.eclipse.tracecompass.incubator.trace.server.jersey.rest.core.tests.stubs.ExperimentModelStub;
@@ -53,7 +54,7 @@ import com.google.common.collect.ImmutableList;
  */
 public abstract class RestServerTest {
     private static final String SERVER = "http://localhost:8378/tsp/api"; //$NON-NLS-1$
-    private static final WebApplication fWebApp = new WebApplication(WebApplication.TEST_PORT);
+    private static final WebApplication fWebApp = new WebApplication(new TraceServerConfiguration(TraceServerConfiguration.TEST_PORT, false, null, null));
     /**
      * Traces endpoint path (relative to application).
      */
@@ -84,6 +85,31 @@ public abstract class RestServerTest {
     public static final String XY_PATH = "XY";
 
     /**
+     * xy series path segment
+     */
+    public static final String XY_SERIES_PATH = "xy";
+
+    /**
+     * states path segment
+     */
+    public static final String STATE_PATH = "states";
+
+    /**
+     * Time Graph path segment
+     */
+    public static final String TABLE_PATH = "table";
+
+    /**
+     * Time Graph path segment
+     */
+    public static final String TABLE_COLUMN_PATH = "columns";
+
+    /**
+     * Time Graph path segment
+     */
+    public static final String TABLE_LINE_PATH = "lines";
+
+    /**
      * <b>name</b> constant
      */
     public static final String NAME = "name";
@@ -100,29 +126,17 @@ public abstract class RestServerTest {
     };
 
     /**
-     * {@link UUID} for {@link CtfTestTrace#CONTEXT_SWITCHES_UST}.
-     */
-    protected static final UUID CONTEXT_SWITCHES_UST_UUID = UUID.fromString("8160c5b3-c482-4d86-9d81-3272e872537f");
-    /**
      * {@link TraceModelStub} to represent the object returned by the server for
      * {@link CtfTestTrace#CONTEXT_SWITCHES_UST}.
      */
     protected static TraceModelStub CONTEXT_SWITCHES_UST_STUB;
 
     /**
-     * {@link UUID} for {@link CtfTestTrace#CONTEXT_SWITCHES_KERNEL}.
-     */
-    protected static final UUID CONTEXT_SWITCHES_KERNEL_UUID = UUID.fromString("5694cebc-b3d1-2d46-a2e6-c6993919ae4f");
-    /**
      * {@link TraceModelStub} to represent the object returned by the server for
      * {@link CtfTestTrace#CONTEXT_SWITCHES_KERNEL}.
      */
     protected static TraceModelStub CONTEXT_SWITCHES_KERNEL_STUB;
 
-    /**
-     * {@link UUID} for {@link CtfTestTrace#CONTEXT_SWITCHES_KERNEL}.
-     */
-    protected static final UUID ARM_64_KERNEL_UUID = UUID.fromString("5d079bb9-28f0-6648-8bcf-390bb7f31523");
     /**
      * {@link TraceModelStub} to represent the object returned by the server for
      * {@link CtfTestTrace#ARM_64_BIT_HEADER}, with the same name as {@link #CONTEXT_SWITCHES_KERNEL_STUB}
@@ -142,14 +156,15 @@ public abstract class RestServerTest {
      */
     @BeforeClass
     public static void beforeTest() throws IOException {
-        String contextSwitchesUstPath = FileLocator.toFileURL(CtfTestTrace.CONTEXT_SWITCHES_UST.getTraceURL()).getPath();
-        CONTEXT_SWITCHES_UST_STUB = new TraceModelStub("ust", contextSwitchesUstPath, CONTEXT_SWITCHES_UST_UUID);
+        String contextSwitchesUstPath = FileLocator.toFileURL(CtfTestTrace.CONTEXT_SWITCHES_UST.getTraceURL()).getPath().replaceAll("/$", "");
+        CONTEXT_SWITCHES_UST_STUB = new TraceModelStub("ust", contextSwitchesUstPath);
 
-        String contextSwitchesKernelPath = FileLocator.toFileURL(CtfTestTrace.CONTEXT_SWITCHES_KERNEL.getTraceURL()).getPath();
-        CONTEXT_SWITCHES_KERNEL_STUB = new TraceModelStub("kernel", contextSwitchesKernelPath, CONTEXT_SWITCHES_KERNEL_UUID);
+        String contextSwitchesKernelPath = FileLocator.toFileURL(CtfTestTrace.CONTEXT_SWITCHES_KERNEL.getTraceURL()).getPath().replaceAll("/$", "");
+        CONTEXT_SWITCHES_KERNEL_STUB = new TraceModelStub("kernel", contextSwitchesKernelPath);
 
-        String arm64Path = FileLocator.toFileURL(CtfTestTrace.ARM_64_BIT_HEADER.getTraceURL()).getPath();
-        ARM_64_KERNEL_STUB = new TraceModelStub("kernel", arm64Path, ARM_64_KERNEL_UUID);
+        String arm64Path = FileLocator.toFileURL(CtfTestTrace.ARM_64_BIT_HEADER.getTraceURL()).getPath().replaceAll("/$", "");
+        ARM_64_KERNEL_STUB = new TraceModelStub("kernel", arm64Path);
+
         ImmutableList.Builder<DataProviderDescriptorStub> b = ImmutableList.builder();
         b.add(new DataProviderDescriptorStub("org.eclipse.tracecompass.internal.analysis.timing.core.segmentstore.scatter.dataprovider:org.eclipse.linuxtools.lttng2.ust.analysis.callstack",
                 "LTTng-UST CallStack - Latency vs Time",
@@ -208,17 +223,53 @@ public abstract class RestServerTest {
     }
 
     /**
-     * Get the {@link WebTarget} for the time graph tree endpoint.
+     * Get the {@link WebTarget} for the table columns endpoint.
      *
-     * @param UUID
-     *            Trace or experiment UUID
+     * @param expUUID
+     *            Experiment UUID
      * @param dataProviderId
      *            Data provider ID
      * @return The time graph tree endpoint
      */
-    public static WebTarget getTimeGraphTreeEndpoint(String UUID, String dataProviderId) {
+    public static WebTarget getTableColumnsEndpoint(String expUUID, String dataProviderId) {
         return getApplicationEndpoint().path(EXPERIMENTS)
-                .path(UUID)
+                .path(expUUID)
+                .path(OUTPUTS_PATH)
+                .path(TABLE_PATH)
+                .path(dataProviderId)
+                .path(TABLE_COLUMN_PATH);
+    }
+
+    /**
+     * Get the {@link WebTarget} for the table lines endpoint.
+     *
+     * @param expUUID
+     *            Experiment UUID
+     * @param dataProviderId
+     *            Data provider ID
+     * @return The time graph tree endpoint
+     */
+    public static WebTarget getTableLinesEndpoint(String expUUID, String dataProviderId) {
+        return getApplicationEndpoint().path(EXPERIMENTS)
+                .path(expUUID)
+                .path(OUTPUTS_PATH)
+                .path(TABLE_PATH)
+                .path(dataProviderId)
+                .path(TABLE_LINE_PATH);
+    }
+
+    /**
+     * Get the {@link WebTarget} for the time graph tree endpoint.
+     *
+     * @param expUUID
+     *            Experiment UUID
+     * @param dataProviderId
+     *            Data provider ID
+     * @return The time graph tree endpoint
+     */
+    public static WebTarget getTimeGraphTreeEndpoint(String expUUID, String dataProviderId) {
+        return getApplicationEndpoint().path(EXPERIMENTS)
+                .path(expUUID)
                 .path(OUTPUTS_PATH)
                 .path(TIMEGRAPH_PATH)
                 .path(dataProviderId)
@@ -226,21 +277,57 @@ public abstract class RestServerTest {
     }
 
     /**
+     * Get the {@link WebTarget} for the time graph state endpoint.
+     *
+     * @param expUUID
+     *            Experiment UUID
+     * @param dataProviderId
+     *            Data provider ID
+     * @return The time graph state endpoint
+     */
+    public static WebTarget getTimeGraphStatesEndpoint(String expUUID, String dataProviderId) {
+        return getApplicationEndpoint().path(EXPERIMENTS)
+                .path(expUUID)
+                .path(OUTPUTS_PATH)
+                .path(TIMEGRAPH_PATH)
+                .path(dataProviderId)
+                .path(STATE_PATH);
+    }
+
+    /**
      * Get the {@link WebTarget} for the XY tree endpoint.
      *
-     * @param UUID
-     *            Trace or experiment UUID
+     * @param expUUID
+     *            Experiment UUID
      * @param dataProviderId
      *            Data provider ID
      * @return The XY tree endpoint
      */
-    public static WebTarget getXYTreeEndpoint(String UUID, String dataProviderId) {
+    public static WebTarget getXYTreeEndpoint(String expUUID, String dataProviderId) {
         return getApplicationEndpoint().path(EXPERIMENTS)
-                .path(UUID)
+                .path(expUUID)
                 .path(OUTPUTS_PATH)
                 .path(XY_PATH)
                 .path(dataProviderId)
                 .path(TREE_PATH);
+    }
+
+    /**
+     * Get the {@link WebTarget} for the XY series endpoint.
+     *
+     * @param expUUID
+     *            Experiment UUID
+     * @param dataProviderId
+     *            Data provider ID
+     * @return The XY series endpoint
+     */
+    public static WebTarget getXYSeriesEndpoint(String expUUID, String dataProviderId) {
+        return getApplicationEndpoint().path(EXPERIMENTS)
+                .path(expUUID)
+                .path(OUTPUTS_PATH)
+                .path(XY_PATH)
+                .path(dataProviderId)
+                .path(XY_SERIES_PATH);
     }
 
     /**
@@ -284,14 +371,43 @@ public abstract class RestServerTest {
      *            traces endpoint
      * @param stub
      *            expected trace stub
+     * @return the resulting stub
      */
-    public static void assertPost(WebTarget traces, TraceModelStub stub) {
+    public static TraceModelStub assertPost(WebTarget traces, TraceModelStub stub) {
         Map<String, Object> parameters = new HashMap<>();
         parameters.put(NAME, stub.getName());
         parameters.put(URI, stub.getPath());
         Response response = traces.request().post(Entity.json(new QueryParameters(parameters , Collections.emptyList())));
         int code = response.getStatus();
         assertEquals("Failed to POST " + stub.getName() + ", error code=" + code, 200, code);
-        assertEquals(stub, response.readEntity(TraceModelStub.class));
+        TraceModelStub result = response.readEntity(TraceModelStub.class);
+        assertEquals(stub, result);
+        return result;
+    }
+
+    /**
+     * Post an experiment from a list of {@link TraceModelStub}, ensure that the
+     * post returned correctly and that the returned model was that of the
+     * expected stub.
+     *
+     * @param name
+     *            experiment name
+     * @param traces
+     *            traces to include in experiment
+     * @return the resulting experiment stub
+     */
+    public static ExperimentModelStub assertPostExperiment(String name, TraceModelStub... traces) {
+        WebTarget application = getApplicationEndpoint();
+        List<String> traceUUIDs = new ArrayList<>();
+        for (TraceModelStub trace : traces) {
+            TraceModelStub traceStub = assertPost(application.path(TRACES), trace);
+            traceUUIDs.add(traceStub.getUUID().toString());
+        }
+        Map<String, Object> parameters = new HashMap<>();
+        parameters.put(NAME, name);
+        parameters.put(TRACES, traceUUIDs);
+        Response response = application.path(EXPERIMENTS).request().post(Entity.json(new QueryParameters(parameters, Collections.emptyList())));
+        assertEquals("Failed to POST experiment " + name + ", error code=" + response.getStatus(), 200, response.getStatus());
+        return response.readEntity(ExperimentModelStub.class);
     }
 }

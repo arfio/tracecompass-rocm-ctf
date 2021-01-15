@@ -47,7 +47,6 @@ public class CTFClock {
     private static final String NAME = "name"; //$NON-NLS-1$
     private static final String FREQ = "freq"; //$NON-NLS-1$
     private static final String OFFSET = "offset"; //$NON-NLS-1$
-    private static final String OFFSET_S = "offset_s"; //$NON-NLS-1$
 
     private long fClockOffset = 0;
     private double fClockScale = 1.0;
@@ -97,17 +96,7 @@ public class CTFClock {
 
         }
         if (key.equals(OFFSET)) {
-            fClockOffset += (Long) getProperty(OFFSET);
-        }
-        if (key.equals(OFFSET_S)) {
-            long secondOffset = (Long) getProperty(OFFSET_S) * ONE_BILLION_L;
-            if (fIsScaled) {
-                secondOffset = (long) (secondOffset * fClockAntiScale);
-            }
-            if (secondOffset < 0) {
-                return; // Overflow
-            }
-            fClockOffset += secondOffset;
+            fClockOffset = (Long) getProperty(OFFSET);
         }
     }
 

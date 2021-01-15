@@ -45,6 +45,11 @@
     <module>org.eclipse.tracecompass.incubator.filters.ui</module>
     <module>org.eclipse.tracecompass.incubator.tmf.ui.multiview</module>
     <module>org.eclipse.tracecompass.incubator.tmf.ui.multiview.ui</module>
+    <module>org.eclipse.tracecompass.incubator.rocm.ctf</module>
+    <module>org.eclipse.tracecompass.incubator.rocm.ctf.core</module>
+    <module>org.eclipse.tracecompass.incubator.rocm.ctf.core.tests</module>
+    <module>org.eclipse.tracecompass.incubator.rocm.ctf.ui</module>
+    <module>org.eclipse.tracecompass.incubator.rocm.ctf.ui.swtbot.tests</module>
     <!-- insert modules here -->
   </modules>
 

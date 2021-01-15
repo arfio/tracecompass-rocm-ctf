@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?pde version="3.5"?>
 
-<product name="Trace Compass" uid="org.eclipse.tracecompass.rcp" id="org.eclipse.tracecompass.rcp.branding.product" application="org.eclipse.tracecompass.rcp.ui.application" version="6.1.0.qualifier" useFeatures="true" includeLaunchers="true">
+<product name="Trace Compass" uid="org.eclipse.tracecompass.rcp" id="org.eclipse.tracecompass.rcp.branding.product" application="org.eclipse.tracecompass.rcp.ui.application" version="6.2.1.qualifier" useFeatures="true" includeLaunchers="true">
 
    <aboutInfo>
       <image path="/org.eclipse.tracecompass.rcp.branding/icons/tc_about.png"/>
       <text>
          Trace Compass
 
-Version: 6.1.0
+Version: 6.2.1
 
-Copyright (c) 2013, 2020 Ericsson and others.
+Copyright (c) 2013, 2021 Ericsson and others.
 
 All rights reserved. This program and the accompanying materials are
 made available under the terms of the Eclipse Public License 2.0 which
@@ -162,7 +162,7 @@ Java and all Java-based trademarks are trademarks of Oracle Corporation in the U
    </configurations>
 
    <repositories>
-      <repository location="http://download.eclipse.org/tracecompass/master/rcp-repository" enabled="true" />
+      <repository location="http://download.eclipse.org/tracecompass/stable/rcp-repository" enabled="true" />
    </repositories>
 
    <preferencesInfo>

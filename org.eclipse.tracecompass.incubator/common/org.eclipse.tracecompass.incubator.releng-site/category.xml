@@ -57,6 +57,9 @@
    <bundle id="org.eclipse.tracecompass.incubator.analysis.core" version="0.0.0">
       <category name="analyses"/>
    </bundle>
+   <bundle id="org.eclipse.tracecompass.incubator.tmf.ui.multiview.ui" version="0.0.0">
+      <category name="analyses"/>
+   </bundle>
    <bundle id="javax.ws.rs"/>
    <bundle id="org.eclipse.lsp4j"/>
    <bundle id="org.eclipse.lsp4j.jsonrpc"/>
@@ -70,6 +73,8 @@
    <bundle id="com.google.javascript"/>
    <bundle id="com.google.protobuf"/>
    <bundle id="org.eclipse.wst.jsdt.manipulation"/>
+   <bundle id="org.eclipse.nebula.widgets.opal.commons"/>
+   <bundle id="org.eclipse.nebula.widgets.opal.duallist"/>
    <category-def name="trace-types" label="Trace Types"/>
    <category-def name="virtualization" label="Virtualization"/>
    <category-def name="analyses" label="Analyses"/>

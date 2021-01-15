@@ -19,7 +19,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
@@ -312,24 +311,32 @@ public abstract class AbstractSelectTreeViewer2 extends AbstractTmfTreeViewer {
      */
     @Override
     protected void contentChanged(ITmfTreeViewerEntry rootEntry) {
-        ITmfTrace trace = getTrace();
-        if (trace == null) {
-            return;
+        try (FlowScopeLog refreshTree = new FlowScopeLogBuilder(LOGGER, Level.FINE, getClass().getSimpleName() + "#contentChanged()").setCategory("contentChanged").build()) { //$NON-NLS-1$ //$NON-NLS-2$
+            ITmfTrace trace = getTrace();
+            if (trace == null) {
+                return;
+            }
+            TmfTraceContext ctx = TmfTraceManager.getInstance().getTraceContext(trace);
+            Set<Long> ids = (Set<Long>) ctx.getData(getDataContextId(CHECKED_ELEMENTS));
+            if (ids != null && rootEntry != null) {
+                List<ITmfTreeViewerEntry> checkedElements = new ArrayList<>();
+                checkEntries(ids, rootEntry, checkedElements);
+                internalSetCheckedElements(checkedElements.toArray());
+            }
+            Object filterString = ctx.getData(getDataContextId(FILTER_STRING));
+            if (filterString instanceof String) {
+                fCheckboxTree.setFilterText((String) filterString);
+            } else {
+                fCheckboxTree.setFilterText(""); //$NON-NLS-1$
+            }
+            refreshTree(refreshTree);
         }
-        TmfTraceContext ctx = TmfTraceManager.getInstance().getTraceContext(trace);
-        Set<Long> ids = (Set<Long>) ctx.getData(getDataContextId(CHECKED_ELEMENTS));
-        if (ids != null && rootEntry != null) {
-            List<ITmfTreeViewerEntry> checkedElements = new ArrayList<>();
-            checkEntries(ids, rootEntry, checkedElements);
-            internalSetCheckedElements(checkedElements.toArray());
+    }
+
+    private void refreshTree(@NonNull FlowScopeLog parent) {
+        try (FlowScopeLog refresh = new FlowScopeLogBuilder(LOGGER, Level.FINE, getClass().getSimpleName() + "#treeRefresh()").setParentScope(parent).build()) {
+            getTreeViewer().refresh();
         }
-        Object filterString = ctx.getData(getDataContextId(FILTER_STRING));
-        if (filterString instanceof String) {
-            fCheckboxTree.setFilterText((String) filterString);
-        } else {
-            fCheckboxTree.setFilterText(""); //$NON-NLS-1$
-        }
-        getTreeViewer().refresh();
     }
 
     /**
@@ -339,8 +346,10 @@ public abstract class AbstractSelectTreeViewer2 extends AbstractTmfTreeViewer {
      *            the elements to check
      */
     protected void setCheckedElements(Object[] checkedElements) {
-        internalSetCheckedElements(checkedElements);
-        getTreeViewer().refresh();
+        try (FlowScopeLog checkedElementsFlow = new FlowScopeLogBuilder(LOGGER, Level.FINE, getClass().getSimpleName() + "#setCheckedElements()").setCategory("setChecked").build()) { //$NON-NLS-1$ //$NON-NLS-2$
+            internalSetCheckedElements(checkedElements);
+            refreshTree(checkedElementsFlow);
+        }
     }
 
     private void internalSetCheckedElements(Object[] checkedElements) {
@@ -481,9 +490,17 @@ public abstract class AbstractSelectTreeViewer2 extends AbstractTmfTreeViewer {
     private void updateTree(ITmfTrace trace, long start, long end, List<@NonNull ITmfTreeDataModel> model) {
         try (FlowScopeLog parentScope = new FlowScopeLogBuilder(LOGGER, Level.FINE, "AbstractSelectTreeViewer:TreeUpdateRequested" ) //$NON-NLS-1$
                 .setCategory(fLogCategory).build()) {
-            final ITmfTreeViewerEntry newRootEntry = modelToTree(start, end, model);
-            /* Set the input in main thread only if it didn't change */
-            if (newRootEntry != null) {
+            final TmfTreeViewerEntry rootEntry = getRoot(trace);
+            /*
+             * To avoid breaking API, get the new tree model root and reassign
+             * its children to the trace's fixed root after clearing it.
+             */
+            final ITmfTreeViewerEntry newTreeModel = modelToTree(start, end, model);
+            if (rootEntry != null && newTreeModel != null) {
+                synchronized (rootEntry) {
+                    rootEntry.getChildren().clear();
+                    newTreeModel.getChildren().forEach(child -> rootEntry.addChild((TmfTreeViewerEntry) child));
+                }
                 Display.getDefault().asyncExec(() -> {
                     try (FlowScopeLog scope = new FlowScopeLogBuilder(LOGGER, Level.FINE, "AbstractSelectTreeViewer:TreeUpdate").setParentScope(parentScope).build()) { //$NON-NLS-1$
 
@@ -496,54 +513,17 @@ public abstract class AbstractSelectTreeViewer2 extends AbstractTmfTreeViewer {
                         }
 
                         Object currentRootEntry = treeViewer.getInput();
-                        if (!(currentRootEntry instanceof ITmfTreeViewerEntry) || !treeEquals(newRootEntry, (ITmfTreeViewerEntry) currentRootEntry)) {
-                            updateTreeUI(treeViewer, newRootEntry);
-                        } else {
-                            treeViewer.refresh();
-                        }
-                        // FIXME should add a bit of padding
-                        for (TreeColumn column : treeViewer.getTree().getColumns()) {
-                            column.pack();
+                        updateTreeUI(treeViewer, rootEntry);
+                        if (rootEntry != currentRootEntry) {
+                            // FIXME should add a bit of padding
+                            for (TreeColumn column : treeViewer.getTree().getColumns()) {
+                                column.pack();
+                            }
                         }
                     }
                 });
             }
         }
-    }
-
-    /**
-     * Recursively compare two trees, as the tree viewer requires a fast method,
-     * {@link Object#hashCode()} for example.
-     *
-     * @param entry1
-     *            one of the root tree entries to compare
-     * @param entry2
-     *            the other tree entry to compare
-     * @return if the trees are equal
-     */
-    private boolean treeEquals(ITmfTreeViewerEntry entry1, ITmfTreeViewerEntry entry2) {
-        if (!Objects.equals(entry1.getName(), entry2.getName())) {
-            return false;
-        }
-        if (entry1 instanceof TmfGenericTreeEntry && entry2 instanceof TmfGenericTreeEntry) {
-            ITmfTreeDataModel model1 = ((TmfGenericTreeEntry<?>) entry1).getModel();
-            ITmfTreeDataModel model2 = ((TmfGenericTreeEntry<?>) entry2).getModel();
-            if (model1 != null && model2 != null && !model1.getLabels().equals(model2.getLabels())) {
-                return false;
-            }
-        }
-        List<@NonNull ? extends ITmfTreeViewerEntry> children1 = entry1.getChildren();
-        List<@NonNull ? extends ITmfTreeViewerEntry> children2 = entry2.getChildren();
-        if (children1.size() != children2.size()) {
-            return false;
-        }
-        int size = children1.size();
-        for (int i = 0; i < size; i++) {
-            if (!treeEquals(children1.get(i), children2.get(i))) {
-                return false;
-            }
-        }
-        return true;
     }
 
     /**

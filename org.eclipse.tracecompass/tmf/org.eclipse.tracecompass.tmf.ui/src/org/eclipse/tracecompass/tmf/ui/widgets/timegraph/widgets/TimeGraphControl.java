@@ -94,6 +94,8 @@ import org.eclipse.tracecompass.common.core.log.TraceCompassLogUtils.ScopeLog;
 import org.eclipse.tracecompass.common.core.math.SaturatedArithmetic;
 import org.eclipse.tracecompass.internal.provisional.tmf.ui.model.IStylePresentationProvider;
 import org.eclipse.tracecompass.internal.provisional.tmf.ui.widgets.timegraph.ITimeGraphStylePresentationProvider;
+import org.eclipse.tracecompass.internal.tmf.ui.Activator;
+import org.eclipse.tracecompass.internal.tmf.ui.ITmfUIPreferences;
 import org.eclipse.tracecompass.internal.tmf.ui.util.LineClipper;
 import org.eclipse.tracecompass.internal.tmf.ui.util.StylePropertiesUtils;
 import org.eclipse.tracecompass.internal.tmf.ui.util.SymbolHelper;
@@ -264,7 +266,7 @@ public class TimeGraphControl extends TimeGraphBaseControl
     private final List<MenuDetectListener> fTimeGraphEntryMenuListeners = new ArrayList<>();
     private final List<MenuDetectListener> fTimeEventMenuListeners = new ArrayList<>();
     private final Cursor fDragCursor = Display.getDefault().getSystemCursor(SWT.CURSOR_HAND);
-    private final Cursor fResizeCursor = Display.getDefault().getSystemCursor(SWT.CURSOR_IBEAM);
+    private final Cursor fResizeCursor = Display.getDefault().getSystemCursor(SWT.CURSOR_CROSS);
     private final Cursor fWaitCursor = Display.getDefault().getSystemCursor(SWT.CURSOR_WAIT);
     private final Cursor fZoomCursor = Display.getDefault().getSystemCursor(SWT.CURSOR_SIZEWE);
     private final Set<@NonNull ViewerFilter> fFilters = new LinkedHashSet<>();
@@ -286,6 +288,7 @@ public class TimeGraphControl extends TimeGraphBaseControl
 
     private boolean fFilterActive;
     private boolean fHasSavedFilters;
+    private boolean fHideEmptyRowsFilterActive;
 
     private List<DeferredEntry> fPostDrawEntries = new ArrayList<>();
 
@@ -1964,17 +1967,21 @@ public class TimeGraphControl extends TimeGraphBaseControl
     }
 
     Rectangle getItemRect(Rectangle bounds, int idx) {
-        int ySum = 0;
-        if (idx >= fTopIndex) {
-            for (int i = fTopIndex; i < idx; i++) {
-                ySum += fItemData.fExpandedItems[i].fItemHeight;
+        int[] ySums = fItemData.fYSums;
+        if (ySums[idx] == ItemData.UNSET_SUM) {
+            int ySum = 0;
+            if (idx >= fTopIndex) {
+                for (int i = fTopIndex; i < idx; i++) {
+                    ySum += fItemData.fExpandedItems[i].fItemHeight;
+                }
+            } else {
+                for (int i = fTopIndex - 1; i >= idx; i--) {
+                    ySum -= fItemData.fExpandedItems[i].fItemHeight;
+                }
             }
-        } else {
-            for (int i = fTopIndex - 1; i >= idx; i--) {
-                ySum -= fItemData.fExpandedItems[i].fItemHeight;
-            }
+            ySums[idx] = ySum;
         }
-        int y = bounds.y + ySum;
+        int y = bounds.y + ySums[idx];
         int height = fItemData.fExpandedItems[idx].fItemHeight;
         return new Rectangle(bounds.x, y, bounds.width, height);
     }
@@ -2412,12 +2419,6 @@ public class TimeGraphControl extends TimeGraphBaseControl
             gc.setClipping(new Rectangle(nameSpace, 0, bounds.width - nameSpace, bounds.height));
             fillSpace(rect, gc, selected);
 
-            int margins = TimeGraphRender.getMarginForHeight(rect.height);
-            int height = rect.height - margins;
-            int topMargin = (margins + 1) / 2;
-            Rectangle stateRect = new Rectangle(rect.x, rect.y + topMargin, rect.width, height);
-
-
             long maxDuration = (timeProvider.getTimeSpace() == 0) ? Long.MAX_VALUE : 1 * (time1 - time0) / timeProvider.getTimeSpace();
             Iterator<@NonNull ITimeEvent> iterator = entry.getTimeEventsIterator(time0, time1, maxDuration);
             switch (entry.getStyle()) {
@@ -2425,7 +2426,7 @@ public class TimeGraphControl extends TimeGraphBaseControl
                 drawLineGraphEntry(time0, rect, pixelsPerNanoSec, iterator);
                 break;
             case STATE:
-                drawTimeGraphEntry(gc, time0, selectedTime, rect, selected, pixelsPerNanoSec, stateRect, iterator);
+                drawTimeGraphEntry(gc, time0, selectedTime, rect, selected, pixelsPerNanoSec, iterator);
                 break;
             default:
                 break;
@@ -2482,9 +2483,13 @@ public class TimeGraphControl extends TimeGraphBaseControl
         fLines.add(new DeferredLine(rect, min, seriesModel, rgba == null ? BLACK : rgba, scale));
     }
 
-    private void drawTimeGraphEntry(GC gc, long time0, long selectedTime, Rectangle rect, boolean selected, double pixelsPerNanoSec, Rectangle stateRect, Iterator<ITimeEvent> iterator) {
+    private void drawTimeGraphEntry(GC gc, long time0, long selectedTime, Rectangle rect, boolean selected, double pixelsPerNanoSec, Iterator<ITimeEvent> iterator) {
         int lastX = -1;
         fLastTransparentX = -1;
+        int margins = TimeGraphRender.getMarginForHeight(rect.height);
+        int height = rect.height - margins;
+        int topMargin = (margins + 1) / 2;
+        Rectangle stateRect = new Rectangle(rect.x, rect.y + topMargin, rect.width, height);
         while (iterator.hasNext()) {
             ITimeEvent event = iterator.next();
             int x = SaturatedArithmetic.add(rect.x, (int) ((event.getTime() - time0) * pixelsPerNanoSec));
@@ -2803,8 +2808,6 @@ public class TimeGraphControl extends TimeGraphBaseControl
         boolean transparent = elementStyle.getParentKey() == null && elementStyle.getStyleValues().isEmpty();
         boolean visible = rect.width <= 0 ? false : true;
         rect.width = Math.max(1, rect.width);
-        Color black = TimeGraphRender.getColor(BLACK.toInt());
-        gc.setForeground(black);
         Float heightFactor = styleManager.getFactorStyle(elementStyle, StyleProperties.HEIGHT);
         heightFactor = (heightFactor != null) ? Math.max(0.0f, Math.min(1.0f, heightFactor)) : DEFAULT_STATE_WIDTH;
         int height = 0;
@@ -2812,6 +2815,8 @@ public class TimeGraphControl extends TimeGraphBaseControl
             height = Math.max(1, (int) (rect.height * heightFactor));
         }
         Rectangle drawRect = new Rectangle(rect.x, rect.y + ((rect.height - height) / 2), rect.width, height);
+        Color black = TimeGraphRender.getColor(BLACK.toInt());
+        gc.setForeground(black);
 
         List<DeferredItem> states = fCurrentDeferredEntry.getItems();
         if (transparent) {
@@ -2825,7 +2830,7 @@ public class TimeGraphControl extends TimeGraphBaseControl
                     DeferredItem deferredItem = new DeferredTransparentState(drawRect, bgColor);
                     if (states.isEmpty() || !states.get(states.size() - 1).getBounds().intersects(drawRect)) {
                         states.add(deferredItem);
-                        deferredItem.add(new PostDrawEvent(event, rect));
+                        deferredItem.add(new PostDrawEvent(event, drawRect));
                     }
                     fLastTransparentX = Math.max(fLastTransparentX, drawRect.x + drawRect.width);
                 } else {
@@ -2918,7 +2923,7 @@ public class TimeGraphControl extends TimeGraphBaseControl
             addPoint(fPoints, rect.x, rect.y - 2);
         }
         if (visible && !Boolean.TRUE.equals(styleManager.getStyle(elementStyle, ITimeEventStyleStrings.annotated())) && last != null) {
-            last.add(new PostDrawEvent(event, rect));
+            last.add(new PostDrawEvent(event, drawRect));
         }
         return visible && !event.isPropertyActive(IFilterProperty.DIMMED);
     }
@@ -3909,6 +3914,8 @@ public class TimeGraphControl extends TimeGraphBaseControl
         private Item[] fItems = new Item[0];
         private ITimeGraphEntry fRootEntries[] = new ITimeGraphEntry[0];
         private List<ILinkEvent> fLinks = new ArrayList<>();
+        private int fYSums[] = new int[0];
+        public static final int UNSET_SUM = -1;
 
         public ItemData() {
             // Do nothing
@@ -3916,6 +3923,12 @@ public class TimeGraphControl extends TimeGraphBaseControl
 
         public Item findItem(ITimeGraphEntry entry) {
             return fItemMap.get(entry);
+        }
+
+        public void resetYSums() {
+            int[] ySums = new int[fItems.length];
+            Arrays.fill(ySums, UNSET_SUM);
+            fYSums = ySums;
         }
 
         public int findItemIndex(ITimeGraphEntry entry) {
@@ -3936,6 +3949,7 @@ public class TimeGraphControl extends TimeGraphBaseControl
             }
             fItemMap = itemMap;
             fItems = fItemMap.values().toArray(new Item[0]);
+            resetYSums();
             updateExpandedItems();
             if (selection != null) {
                 for (Item item : fExpandedItems) {
@@ -3989,7 +4003,7 @@ public class TimeGraphControl extends TimeGraphBaseControl
                 refreshExpanded(expandedItemList, item);
             }
 
-            if (hasSavedFilters()) {
+            if (Activator.getDefault().getPreferenceStore().getBoolean(ITmfUIPreferences.FILTER_EMPTY_ROWS) ? hasSavedFilters() : isHideEmptyRowsFilterActive()) {
                 filterData(expandedItemList);
             }
 
@@ -4241,5 +4255,26 @@ public class TimeGraphControl extends TimeGraphBaseControl
      */
     public boolean hasSavedFilters() {
         return fHasSavedFilters;
+    }
+
+    /**
+     * Tells whether the HideEmptyRows action is active or not
+     *
+     * @return True when the HideEmptyRows action is active, false otherwise
+     * @since 6.2
+     */
+    public boolean isHideEmptyRowsFilterActive() {
+        return fHideEmptyRowsFilterActive;
+    }
+
+    /**
+     * Set whether the HideEmptyRows action is active or not
+     *
+     * @param hideEmptyRowsFilterActive
+     *            true to make the HideEmptyRows action active
+     * @since 6.2
+     */
+    public void setHideEmptyRowsFilterActive(boolean hideEmptyRowsFilterActive) {
+        fHideEmptyRowsFilterActive = hideEmptyRowsFilterActive;
     }
 }
